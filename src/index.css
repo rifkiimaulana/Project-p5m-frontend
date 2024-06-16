@@ -1,0 +1,39 @@
+a div:hover {
+  background-color: #eee;
+}
+
+dialog {
+  margin-top: 20px;
+  overflow-x: auto;
+  width: calc(100% - 20px);
+  pointer-events: auto;
+  background-color: #fff;
+  background-clip: padding-box;
+  border: 1px solid rgba(0, 0, 0, 0.175);
+  border-radius: 0.5rem;
+  outline: 0;
+  padding: 0;
+}
+
+dialog::backdrop {
+  backdrop-filter: blur(10px);
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.sidebarMenu {
+  width: 13vw;
+}
+
+.responsiveContainer {
+  margin-left: 13vw;
+}
+
+@media only screen and (max-width: 1280px) {
+  .sidebarMenu {
+    display: none;
+  }
+
+  .responsiveContainer {
+    margin-left: 0;
+  }
+}
