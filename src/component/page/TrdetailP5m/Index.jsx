@@ -76,21 +76,51 @@ export default function TrDetailP5mIndex({ onChangePage }) {
   }, []);
 
   const handleCheckboxChange = (nim, field, checked) => {
-    console.log("Checkbox changed:", nim, field, checked);
+    setDataForSubmit(prevData => {
+      let newData = [...prevData];
+      let totalJamMinus = 0;
+      let existingIndex = newData.findIndex(item => item.mhs_id === nim);
+  
+      if (existingIndex !== -1) {
+        // Existing item found, update the field
+        console.log('exist');
+        newData[existingIndex] = {
+          ...newData[existingIndex],
+          [field]: checked ? 1 : 0
+        };
 
-    setStudentData((prevData) => {
-      const currentStudent = prevData[nim] || { ...initialStudentData, mhs_id: nim };
-      const updatedStudent = {
-        ...currentStudent,
-        [field]: checked ? 1 : 0,
-      };
-      updatedStudent.total_jam_minus = calculateTotalJamMinus(updatedStudent);
-      return {
-        ...prevData,
-        [nim]: updatedStudent,
-      };
+        // Recalculate total_jam_minus
+        totalJamMinus = Object.keys(newData[existingIndex])
+          .filter(key => key.startsWith('det_'))
+          .reduce((sum, key) => sum + newData[existingIndex][key] * 2, 0);
+
+        newData[existingIndex].total_jam_minus = totalJamMinus;
+      } else {
+        const p1 = selectedClass;
+        const p2 = 1; // Replace with your actual value 
+        const p13 = 1;
+
+        // Add new student data
+        const newItem = {
+          p1,
+          p2,
+          mhs_id: nim,
+          det_telat: field === 'det_telat' ? (checked ? 1 : 0) : 0,
+          det_id_card: field === 'det_id_card' ? (checked ? 1 : 0) : 0,
+          det_nametag: field === 'det_nametag' ? (checked ? 1 : 0) : 0,
+          det_rambut: field === 'det_rambut' ? (checked ? 1 : 0) : 0,
+          det_sepatu: field === 'det_sepatu' ? (checked ? 1 : 0) : 0,
+          p13
+        };
+        
+        newData.push(newItem);
+      }
+
+      setDataForSubmit(newData);
+  
+      return newData;
     });
-  };
+  };  
 
   useEffect(() => {
     console.log(studentData);
@@ -129,6 +159,21 @@ export default function TrDetailP5mIndex({ onChangePage }) {
           });
           const riwayatData = await riwayatResponse.json();
 
+          // Map riwayatData to the format required for 'dataForSubmit'
+          const formattedData = riwayatData.map(item => ({
+            p1: item.p5m_kelas,
+            p2: item.det_created_date, // Adjust this to the correct property you need
+            mhs_id: item.mhs_id,
+            det_telat: item.det_telat === 'Checked' ? 1 : 0,
+            det_id_card: item.det_id_card === 'Checked' ? 1 : 0,
+            det_nametag: item.det_nametag === 'Checked' ? 1 : 0,
+            det_rambut: item.det_rambut === 'Checked' ? 1 : 0,
+            det_sepatu: item.det_sepatu === 'Checked' ? 1 : 0,
+            total_jam_minus: item.det_total_jam_minus,
+          }));
+
+          setDataForSubmit(formattedData);
+
           // Update formattedData based on riwayatData
           const updatedFormattedData = filteredData.map((value) => {
             const riwayatItem = riwayatData.find((riwayat) => riwayat.mhs_id === value.nim);
@@ -145,7 +190,6 @@ export default function TrDetailP5mIndex({ onChangePage }) {
                   type="checkbox"
                   checked={riwayatItem && riwayatItem.det_telat === "Checked"}
                   onChange={(e) => handleCheckboxChange(value.nim, "det_telat", e.target.checked)}
-                  // disabled={!isToday} // Menyesuaikan disable berdasarkan isToday
                 />
               ),
               Idcard: (
@@ -153,7 +197,6 @@ export default function TrDetailP5mIndex({ onChangePage }) {
                   type="checkbox"
                   checked={riwayatItem && riwayatItem.det_id_card === "Checked"}
                   onChange={(e) => handleCheckboxChange(value.nim, "det_id_card", e.target.checked)}
-                  // disabled={!isToday} // Menyesuaikan disable berdasarkan isToday
                 />
               ),
               Nametag: (
@@ -161,7 +204,6 @@ export default function TrDetailP5mIndex({ onChangePage }) {
                   type="checkbox"
                   checked={riwayatItem && riwayatItem.det_nametag === "Checked"}
                   onChange={(e) => handleCheckboxChange(value.nim, "det_nametag", e.target.checked)}
-                  // disabled={!isToday} // Menyesuaikan disable berdasarkan isToday
                 />
               ),
               Rambut: (
@@ -169,7 +211,6 @@ export default function TrDetailP5mIndex({ onChangePage }) {
                   type="checkbox"
                   checked={riwayatItem && riwayatItem.det_rambut === "Checked"}
                   onChange={(e) => handleCheckboxChange(value.nim, "det_rambut", e.target.checked)}
-                  // disabled={!isToday} // Menyesuaikan disable berdasarkan isToday
                 />
               ),
               Sepatu: (
@@ -177,7 +218,6 @@ export default function TrDetailP5mIndex({ onChangePage }) {
                   type="checkbox"
                   checked={riwayatItem && riwayatItem.det_sepatu === "Checked"}
                   onChange={(e) => handleCheckboxChange(value.nim, "det_sepatu", e.target.checked)}
-                  // disabled={!isToday} // Menyesuaikan disable berdasarkan isToday
                 />
               ),
               'Jam Minus': riwayatItem ? riwayatItem.det_total_jam_minus : 0,
@@ -284,6 +324,46 @@ export default function TrDetailP5mIndex({ onChangePage }) {
   };
 
   const handlesAdd = async () => {
+    try {
+        // Calculate p9 for each item in dataForSubmit
+        const updatedDataForSubmit = dataForSubmit.map(item => {
+            const det_telat = item.det_telat === 1 ? 1 : 0;
+            const det_id_card = item.det_id_card === 1 ? 1 : 0;
+            const det_nametag = item.det_nametag === 1 ? 1 : 0;
+            const det_rambut = item.det_rambut === 1 ? 1 : 0;
+            const det_sepatu = item.det_sepatu === 1 ? 1 : 0;
+
+            const p9 = (det_telat + det_id_card + det_nametag + det_rambut + det_sepatu) * 2;
+
+            return {
+                ...item,
+                p9
+            };
+        });
+
+        console.log(updatedDataForSubmit); // Check if p9 is correctly calculated
+
+        const response = await fetch(API_LINK + "TransaksiP5m/EditP5m", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(updatedDataForSubmit) // Send updatedDataForSubmit to API
+        });
+
+        if (response.ok) {
+            SweetAlert("Sukses", "Data P5M berhasil disimpan", "success");
+        } else {
+            const errorData = await response.json();
+            SweetAlert("Error", "Terjadi kesalahan saat menyimpan data P5M: " + errorData.message, "error");
+        }
+    } catch (error) {
+        console.error("Error editing P5M data:", error);
+        SweetAlert("Error", "Terjadi kesalahan saat menyimpan data P5M", "error");
+    }
+  };
+
+  const handlesAddOld = async () => {
   try {
     for (let [nim, data] of Object.entries(studentData)) {
       console.log(data);
@@ -536,7 +616,6 @@ export default function TrDetailP5mIndex({ onChangePage }) {
                   classType="success mt-3"
                   label="Ubah"
                   onClick={handlesAdd}
-                  disabled={!isToday}
                 />
             </div>
           )}

@@ -252,12 +252,29 @@ export default function TrP5mIndex({ onChangePage }) {
 
   const handlesAdd = async () => {
     try {
+      const p1 = selectedClass.current;
+      const p2 = 1;
+      const p13 = 1;
+
+      const dataForSubmitNew = dataForSubmit.map(item => ({
+          p1,
+          p2,
+          mhs_id: item.mhs_id,
+          det_telat: item.det_telat,
+          det_id_card: item.det_id_card,
+          det_nametag: item.det_nametag,
+          det_rambut: item.det_rambut,
+          det_sepatu: item.det_sepatu,
+          p9: eval(item.det_telat+item.det_id_card+item.det_nametag+item.det_rambut+item.det_sepatu)*2,
+          p13
+      }));
+
         const response = await fetch(API_LINK + "TransaksiP5m/CreateP5m", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify(dataForSubmit) // Ensure data is a JSON string
+            body: JSON.stringify(dataForSubmitNew) // Ensure data is a JSON string
         });
 
         if (response.ok) {
