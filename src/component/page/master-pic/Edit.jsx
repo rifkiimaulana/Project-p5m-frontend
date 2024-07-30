@@ -106,11 +106,10 @@ export default function MasterPicEdit({ onChangePage, withID }) {
       const data = await UseFetch(API_LINK + "MasterPic/EditPic", params);
 
       // Periksa respons dari API
-      if (data === "ERROR") {
-        throw new Error("Terjadi kesalahan: Gagal menyimpan data PIC.");
+      if (Array.isArray(data) && data[0]?.hasil === "ERROR") {
+        SweetAlert("Gagal", "Username sudah ada.", "error");
       } else {
-        // Tampilkan pesan sukses
-        SweetAlert("Sukses", "Data PIC berhasil diubah", "success");
+        SweetAlert("Sukses", "Data PIC berhasil disimpan", "success");
         onChangePage("index");
       }
     } catch (error) {
@@ -132,11 +131,11 @@ export default function MasterPicEdit({ onChangePage, withID }) {
 
   return (
     <>
-      {isError.error && (
+      {/* {isError.error && (
         <div className="flex-fill">
           <Alert type="danger" message={isError.message} />
         </div>
-      )}
+      )} */}
       <form onSubmit={handleAdd}>
         <div className="card">
           <div className="card-header bg-primary fw-medium text-white">

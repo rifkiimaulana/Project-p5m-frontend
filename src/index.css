@@ -37,3 +37,16 @@ dialog::backdrop {
     margin-left: 0;
   }
 }
+
+.table-container {
+  position: relative;
+  overflow-y: auto;
+  height: 1000px; /* Anda bisa mengubah ini sesuai kebutuhan */
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  background-color: #fff; /* Warna latar belakang header */
+  z-index: 10; /* Pastikan header tetap di atas */
+}

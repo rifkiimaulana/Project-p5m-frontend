@@ -1,0 +1,26 @@
+/* App.css */
+
+.main-container {
+    margin-top: 70px;
+    display: flex;
+    flex-direction: row;
+    height: 100vh;
+  }
+  
+  header {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+  }
+  
+  .sidebar {
+    width: 250px;
+    flex-shrink: 0;
+  }
+  
+  .container {
+    flex-grow: 1;
+    padding: 20px;
+    overflow-y: auto;
+  }

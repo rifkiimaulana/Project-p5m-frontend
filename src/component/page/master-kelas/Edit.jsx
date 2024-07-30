@@ -56,7 +56,10 @@ export default function MasterKelasEdit({ onChangePage, withID }) {
 
         if (!kelasData || kelasData.length === 0) {
           throw new Error("Data kelas tidak ditemukan.");
-        } else {
+        
+        } 
+       
+        else {
           setListPic(listPicData);
           formDataRef.current = { ...formDataRef.current, ...kelasData[0] };
         }
@@ -100,7 +103,7 @@ export default function MasterKelasEdit({ onChangePage, withID }) {
       try {
         const params = {
           idKelas: formDataRef.current.idKelas || "",
-          query : formDataRef.current.query || "",
+          query: formDataRef.current.query || "",
           nama: formDataRef.current.nama || "",
           idPic: formDataRef.current.idPic || "",
           status: formDataRef.current.status || "Aktif",
@@ -110,13 +113,27 @@ export default function MasterKelasEdit({ onChangePage, withID }) {
         // Log parameter yang akan dikirim ke API
         console.log("Submitting data with params:", params);
   
-        const data = await UseFetch(API_LINK + "MasterKelas/EditKelas", params);
+        const response = await UseFetch(API_LINK + "MasterKelas/EditKelas", params);
   
-        // Log respons dari API
-        console.log("API response:", data);
+        // Log response dari API
+        console.log("API Response:", response);
   
-        if (data === "ERROR") {
+        if (response === "ERROR") {
           throw new Error("Terjadi kesalahan: Gagal menyimpan data Kelas.");
+        }
+  
+        if (Array.isArray(response) && response[0]?.hasil.startsWith("ERROR:")) {
+          let errorMessage = "";
+  
+          switch (response[0].hasil) {
+            case "ERROR: Nama kelas sudah ada":
+              errorMessage = "Nama kelas sudah ada.";
+              break;
+            default:
+              errorMessage = "Terjadi kesalahan.";
+          }
+  
+          SweetAlert("Gagal", errorMessage, "error");
         } else {
           SweetAlert("Sukses", "Data Kelas berhasil disimpan", "success");
           onChangePage("index");
@@ -135,17 +152,17 @@ export default function MasterKelasEdit({ onChangePage, withID }) {
     }
   };
   
-  
     
+  
   if (isLoading) return <Loading />;
 
   return (
     <>
-      {isError.error && (
+      {/* {isError.error && (
         <div className="flex-fill">
           <Alert type="danger" message={isError.message} />
         </div>
-      )}
+      )} */}
       <form onSubmit={handleAdd}>
         <div className="card">
           <div className="card-header bg-primary fw-medium text-white">

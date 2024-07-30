@@ -105,11 +105,11 @@ export default function MasterKelasAdd({ onChangePage }) {
 
   return (
     <>
-      {isError.error && (
+      {/* {isError.error && (
         <div className="flex-fill">
           <Alert type="danger" message={isError.message} />
         </div>
-      )}
+      )} */}
       <form onSubmit={handleAdd}>
         <div className="card">
           <div className="card-header bg-primary fw-medium text-white">

@@ -139,14 +139,14 @@ export default function MasterKelasIndex({ onChangePage }) {
   return (
     <>
       <div className="d-flex flex-column">
-        {isError && (
+        {/* {isError && (
           <div className="flex-fill">
             <Alert
               type="warning"
               message="Terjadi kesalahan: Gagal mengambil data kelas."
             />
           </div>
-        )}
+        )} */}
         <div className="flex-fill">
           <div className="input-group">
             <Button

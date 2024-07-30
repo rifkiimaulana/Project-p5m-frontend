@@ -40,32 +40,53 @@ export default function MasterPICAdd({ onChangePage }) {
 
   const handleAdd = async (e) => {
     e.preventDefault();
-
+  
     const validationErrors = await validateAllInputs(
       formDataRef.current,
       userSchema,
       setErrors
     );
-
+  
     if (Object.values(validationErrors).every((error) => !error)) {
       setIsLoading(true);
       setIsError((prevError) => ({ ...prevError, error: false }));
       setErrors({});
-
+  
       try {
-        const data = await UseFetch(
-          API_LINK + "MasterPic/CreatePic",
-          formDataRef.current
-        );
+        const params = {
+          username: formDataRef.current.username || "",
+          namaPic: formDataRef.current.namaPic || "",
+          status: formDataRef.current.status || "Aktif",
+          created_by: 1, // Ganti dengan ID user yang melakukan input jika ada
+        };
+  
+        // Log parameter yang akan dikirim ke API
+        console.log("Submitting data with params:", params);
+  
+        const data = await UseFetch(API_LINK + "MasterPic/CreatePic", params);
         console.log("Response data: ", data); // Tambahkan logging di sini
-
-        if (Array.isArray(data) && data[0]?.hasil === "ERROR") {
-          SweetAlert("Gagal", "Username sudah ada.", "error");
+  
+        if (Array.isArray(data) && data[0]?.hasil.startsWith("ERROR")) {
+          let errorMessage = "";
+          
+          switch (data[0].hasil) {
+            case "ERROR: Username sudah ada":
+              errorMessage = "Username sudah ada.";
+              break;
+            case "ERROR: Nama PIC sudah ada":
+              errorMessage = "Nama PIC sudah ada.";
+              break;
+            default:
+              errorMessage = "Terjadi kesalahan.";
+          }
+  
+          SweetAlert("Gagal", errorMessage, "error");
         } else {
           SweetAlert("Sukses", "Data PIC berhasil disimpan", "success");
           onChangePage("index");
         }
       } catch (error) {
+        console.error("Error:", error);
         setIsError((prevError) => ({
           ...prevError,
           error: true,
@@ -74,8 +95,11 @@ export default function MasterPICAdd({ onChangePage }) {
       } finally {
         setIsLoading(false);
       }
+    } else {
+      console.log("Validation failed. Aborting data submission.");
     }
   };
+  
 
   if (isLoading) return <Loading />;
 

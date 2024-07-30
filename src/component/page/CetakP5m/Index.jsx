@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { PAGE_SIZE, API_LINK } from "../../util/Constants";
 import SweetAlert from "../../util/SweetAlert";
 import UseFetch from "../../util/UseFetch";
@@ -20,6 +20,10 @@ export default function CetakP5mIndex({ onChangePage }) {
   const [endDate, setEndDate] = useState(today);
   const [mahasiswaData, setMahasiswaData] = useState([]);
   const [totalData, setTotalData] = useState(0);
+  const searchQuery = useRef("");
+  const searchFilterSort = useRef("");
+  const searchFilterStatus = useRef("Aktif");
+  
 
   const [currentFilter, setCurrentFilter] = useState({
     page: 1,
@@ -28,57 +32,57 @@ export default function CetakP5mIndex({ onChangePage }) {
     status: "Aktif",
   });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsError(false);
-      setIsLoading(true);
+    useEffect(() => {
+      const fetchData = async () => {
+        setIsError(false);
+        setIsLoading(true);
 
-      try {
-        // Fetch data mahasiswa
-        const responseMahasiswa = await fetch(
-          "https://api.polytechnic.astra.ac.id:2906/api_dev/efcc359990d14328fda74beb65088ef9660ca17e/SIA/getListMahasiswa?id_konsentrasi=3"
-        );
-        const jsonDataMahasiswa = await responseMahasiswa.json();
+        try {
+          // Fetch data mahasiswa
+          const responseMahasiswa = await fetch(
+            "https://api.polytechnic.astra.ac.id:2906/api_dev/efcc359990d14328fda74beb65088ef9660ca17e/SIA/getListMahasiswa?id_konsentrasi=3"
+          );
+          const jsonDataMahasiswa = await responseMahasiswa.json();
 
-        if (!jsonDataMahasiswa || jsonDataMahasiswa === "ERROR") {
-          setIsError(true);
-          setIsLoading(false);
-          return;
-        }
+          if (!jsonDataMahasiswa || jsonDataMahasiswa === "ERROR") {
+            setIsError(true);
+            setIsLoading(false);
+            return;
+          }
 
-        setMahasiswaData(jsonDataMahasiswa);
+          setMahasiswaData(jsonDataMahasiswa);
 
-        // Fetch riwayat data
-        const riwayatResponse = await fetch(API_LINK + "TransaksiP5m/GetCetakP5m", {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            startDate: startDate,
-            endDate: endDate,
-          }),
-        });
-        const riwayatData = await riwayatResponse.json();
+          // Fetch riwayat data
+          const riwayatResponse = await fetch(API_LINK + "TransaksiP5m/GetCetakP5m", {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              startDate: startDate,
+              endDate: endDate,
+            }),
+          });
+          const riwayatData = await riwayatResponse.json();
 
-        if (!riwayatData || riwayatData === "ERROR") {
-          setIsError(true);
-          setIsLoading(false);
-          return;
-        }
+          if (!riwayatData || riwayatData === "ERROR") {
+            setIsError(true);
+            setIsLoading(false);
+            return;
+          }
 
-        // Process and update data
-        const updatedFormattedData = riwayatData.map((value, index) => {
-          const mahasiswa = jsonDataMahasiswa.find((m) => m.nim === value.mhs_id);
-          const formattedDate = value.det_created_date ? new Date(value.det_created_date).toLocaleDateString() : "";
-          return {
-            No: index + 1,
-            Nim: value.mhs_id,
-            Nama: mahasiswa ? mahasiswa.nama : "", // Memastikan nama mahasiswa terambil dengan benar
-            'Jam Minus': value.total_jam_minus,
-            Alignment: ["center", "center", "left", "center", "center"],
-          };
-        });
+          // Process and update data
+          const updatedFormattedData = riwayatData.map((value, index) => {
+            const mahasiswa = jsonDataMahasiswa.find((m) => m.nim === value.mhs_id);
+            const formattedDate = value.det_created_date ? new Date(value.det_created_date).toLocaleDateString() : "";
+            return {
+              No: index + 1,
+              Nim: value.mhs_id,
+              Nama: mahasiswa ? mahasiswa.nama : "", // Memastikan nama mahasiswa terambil dengan benar
+              'Jam Minus': value.total_jam_minus,
+              Alignment: ["center", "center", "left", "center"],
+            };
+          });
 
         setCurrentData(updatedFormattedData);
         setTotalData(updatedFormattedData.length);
@@ -193,52 +197,56 @@ export default function CetakP5mIndex({ onChangePage }) {
   const pageData = currentData.slice(startIndex, endIndex);
 
   return (
-    <div className="d-flex flex-column">
+    <div className="CetakP5mIndex">
       {isError && (
-        <div className="flex-fill">
-          <Alert
-            type="warning"
-            message="Terjadi kesalahan: Gagal mengambil data kelas."
-          />
-        </div>
+        <Alert
+          type="warning"
+          message="Terjadi kesalahan: Gagal mengambil data akumulasi."
+        />
       )}
-      <div className="row mb-4 align-items-center">
-        <div className="col-md-5 mb-2 mb-md-0">
-          <label className="mb-0">Tanggal Awal:</label>
+      <div className="card-body">
+      <div className="row mb-2">
+        <div className="col-md-6">
+          <label htmlFor="startDate">Tanggal Awal:</label>
           <input
             type="date"
+            id="startDate"
             className="form-control"
             value={startDate}
             max={today}
             onChange={(e) => setStartDate(e.target.value)}
           />
         </div>
-        <div className="col-md-5 mb-2 mb-md-0">
-          <label className="mb-0">Tanggal Akhir:</label>
+        <div className="col-md-6">
+          <label htmlFor="endDate">Tanggal Akhir:</label>
           <input
             type="date"
+            id="endDate"
             className="form-control"
             value={endDate}
             max={today}
             onChange={(e) => setEndDate(e.target.value)}
           />
         </div>
-        <div className="col-md-2 d-flex align-items-end justify-content-end">
-          <Button
-            iconName="print"
-            classType="success"
-            label="Cetak Excel"
-            onClick={handleExportToExcel}
-          />
-        </div>
       </div>
-      <div className="mt-3">
+      <div className="row">
+      <div className="col-md-6 mb-3">
+        <Button
+          iconName="print"
+          classType="success"
+          label="Eksport Excel"
+          onClick={handleExportToExcel}
+        />
+      </div>
+      </div>
+    </div>
+      <div className="table-container">
         {isLoading ? (
           <Loading />
         ) : (
-          <div className="d-flex flex-column">
+          <>
             <Table
-              data={pageData}
+              data={pageData.length ? pageData : [{}]}  // Ensure data is always an array
               onToggle={handleSetStatus}
               onDetail={onChangePage}
               onEdit={onChangePage}
@@ -249,7 +257,7 @@ export default function CetakP5mIndex({ onChangePage }) {
               totalData={totalData}
               navigation={handleSetCurrentPage}
             />
-          </div>
+          </>
         )}
       </div>
     </div>

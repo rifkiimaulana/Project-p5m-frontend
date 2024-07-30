@@ -154,7 +154,7 @@ export default function Table({
   }
 
   return (
-    <div className="flex-fill">
+    <div className="flex-fill ">
       <table className="table table-hover table-striped table table-light border">
         <thead>
           <tr>

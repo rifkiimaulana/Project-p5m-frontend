@@ -13,7 +13,7 @@ const API_LINK = 'http://localhost:5255/api/';
 
 export default function BerandaIndex() {
   const today = new Date().toISOString().split('T')[0];
-  const defaultStartDate = '2024-05-01';
+  // const defaultStartDate = '2024-05-01';
 
   const [chartDataPelanggaran, setChartDataPelanggaran] = useState({
     labels: ['Telat', 'ID Card', 'Nametag', 'Rambut', 'Sepatu'],
@@ -30,7 +30,7 @@ export default function BerandaIndex() {
 
 
 
-  const [startDate, setStartDate] = useState(defaultStartDate);
+  const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
   const [top3MahasiswaMelanggar, setTop3MahasiswaMelanggar] = useState([]);
   const [mahasiswaData, setMahasiswaData] = useState([]);

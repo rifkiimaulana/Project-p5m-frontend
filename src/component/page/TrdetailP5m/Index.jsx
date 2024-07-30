@@ -6,11 +6,17 @@ import Button from "../../part/Button";
 import Input from "../../part/Input";
 import Table from "../../part/Table";
 import Paging from "../../part/Paging";
-import Filter from "../../part/Filter";
 import DropDown from "../../part/Dropdown";
 import Alert from "../../part/Alert";
 import Loading from "../../part/Loading";
 import * as XLSX from 'xlsx';
+import Cookies from "js-cookie";
+import { decryptId } from "../../util/Encryptor";
+
+
+const cookie = Cookies.get("activeUser");
+
+const userInfo = JSON.parse(decryptId(cookie));
 
 const initialData = [];
 
@@ -35,7 +41,7 @@ export default function TrDetailP5mIndex({ onChangePage }) {
     sort: "[Kelas] asc",
     status: "Aktif",
     selectedClass: "",
-    startDate: " ",
+    startDate: new Date().toISOString().split('T')[0], // Set initial start date to today
     pageSize: PAGE_SIZE, // Tambahkan pageSize di state currentFilter
   });
   const [totalPages, setTotalPages] = useState(1); // State untuk jumlah halaman
@@ -62,7 +68,8 @@ export default function TrDetailP5mIndex({ onChangePage }) {
   useEffect(() => {
     const fetchClassList = async () => {
       try {
-        const classData = await UseFetch(API_LINK + "MasterKelas/GetDataKelasCombo");
+
+        const classData = await UseFetch(API_LINK + "MasterKelas/GetDataKelasCombo", { id: userInfo.nama });
         if (classData && classData !== "ERROR") {
           setClassList(classData);
         }
@@ -72,59 +79,11 @@ export default function TrDetailP5mIndex({ onChangePage }) {
     };
 
     fetchClassList();
-
   }, []);
-
-  const handleCheckboxChange = (nim, field, checked) => {
-    setDataForSubmit(prevData => {
-      let newData = [...prevData];
-      let totalJamMinus = 0;
-      let existingIndex = newData.findIndex(item => item.mhs_id === nim);
-  
-      if (existingIndex !== -1) {
-        // Existing item found, update the field
-        console.log('exist');
-        newData[existingIndex] = {
-          ...newData[existingIndex],
-          [field]: checked ? 1 : 0
-        };
-
-        // Recalculate total_jam_minus
-        totalJamMinus = Object.keys(newData[existingIndex])
-          .filter(key => key.startsWith('det_'))
-          .reduce((sum, key) => sum + newData[existingIndex][key] * 2, 0);
-
-        newData[existingIndex].total_jam_minus = totalJamMinus;
-      } else {
-        const p1 = selectedClass;
-        const p2 = 1; // Replace with your actual value 
-        const p13 = 1;
-
-        // Add new student data
-        const newItem = {
-          p1,
-          p2,
-          mhs_id: nim,
-          det_telat: field === 'det_telat' ? (checked ? 1 : 0) : 0,
-          det_id_card: field === 'det_id_card' ? (checked ? 1 : 0) : 0,
-          det_nametag: field === 'det_nametag' ? (checked ? 1 : 0) : 0,
-          det_rambut: field === 'det_rambut' ? (checked ? 1 : 0) : 0,
-          det_sepatu: field === 'det_sepatu' ? (checked ? 1 : 0) : 0,
-          p13
-        };
-        
-        newData.push(newItem);
-      }
-
-      setDataForSubmit(newData);
-  
-      return newData;
-    });
-  };  
 
   useEffect(() => {
     console.log(studentData);
-  }, [studentData])
+  }, [studentData]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -133,7 +92,7 @@ export default function TrDetailP5mIndex({ onChangePage }) {
 
       try {
         // Fetch student data
-        const response = await fetch(
+        const response = await fetch( 
           "https://api.polytechnic.astra.ac.id:2906/api_dev/efcc359990d14328fda74beb65088ef9660ca17e/SIA/getListMahasiswa?id_konsentrasi=3"
         );
         const jsonData = await response.json();
@@ -180,46 +139,21 @@ export default function TrDetailP5mIndex({ onChangePage }) {
 
             // Convert timestamp to readable date format
             const formattedDate = riwayatItem ? new Date(riwayatItem.det_created_date).toLocaleDateString() : "";
+            
+            // Function to create a disabled checkbox
+            const createDisabledCheckbox = (isChecked) => (
+              <input type="checkbox" checked={isChecked} disabled />
+            );
 
             return {
               Nim: value.nim,
               Nama: value.nama,
               Kelas: value.kelas,
-              Telat: (
-                <input
-                  type="checkbox"
-                  checked={riwayatItem && riwayatItem.det_telat === "Checked"}
-                  onChange={(e) => handleCheckboxChange(value.nim, "det_telat", e.target.checked)}
-                />
-              ),
-              Idcard: (
-                <input
-                  type="checkbox"
-                  checked={riwayatItem && riwayatItem.det_id_card === "Checked"}
-                  onChange={(e) => handleCheckboxChange(value.nim, "det_id_card", e.target.checked)}
-                />
-              ),
-              Nametag: (
-                <input
-                  type="checkbox"
-                  checked={riwayatItem && riwayatItem.det_nametag === "Checked"}
-                  onChange={(e) => handleCheckboxChange(value.nim, "det_nametag", e.target.checked)}
-                />
-              ),
-              Rambut: (
-                <input
-                  type="checkbox"
-                  checked={riwayatItem && riwayatItem.det_rambut === "Checked"}
-                  onChange={(e) => handleCheckboxChange(value.nim, "det_rambut", e.target.checked)}
-                />
-              ),
-              Sepatu: (
-                <input
-                  type="checkbox"
-                  checked={riwayatItem && riwayatItem.det_sepatu === "Checked"}
-                  onChange={(e) => handleCheckboxChange(value.nim, "det_sepatu", e.target.checked)}
-                />
-              ),
+              Telat: createDisabledCheckbox(riwayatItem && riwayatItem.det_telat === "Checked"),
+              Idcard: createDisabledCheckbox(riwayatItem && riwayatItem.det_id_card === "Checked"),
+              Nametag: createDisabledCheckbox(riwayatItem && riwayatItem.det_nametag === "Checked"),
+              Rambut: createDisabledCheckbox(riwayatItem && riwayatItem.det_rambut === "Checked"),
+              Sepatu: createDisabledCheckbox(riwayatItem && riwayatItem.det_sepatu === "Checked"),
               'Jam Minus': riwayatItem ? riwayatItem.det_total_jam_minus : 0,
               Tanggal: formattedDate,
               Alignment: ["", "Left", "center", "center", "center", "center", "center", "center", "center", "center"],
@@ -254,13 +188,6 @@ export default function TrDetailP5mIndex({ onChangePage }) {
       ...prevFilter,
       page: newCurrentPage,
     }));
-
-    // Tidak perlu melakukan slice, karena sudah di-handle di useEffect fetchData
-    // setCurrentData(currentData); // Tidak
-    // Tidak perlu melakukan slice, karena sudah di-handle di useEffect fetchData
-    // setCurrentData(currentData); // Tidak perlu melakukan perubahan apapun
-
-    // fetchData() akan dijalankan secara otomatis saat currentFilter.page berubah
   };
 
   const handleSetStatus = (id) => {
@@ -322,122 +249,6 @@ export default function TrDetailP5mIndex({ onChangePage }) {
       console.error("Error fetching riwayat data:", error);
     }
   };
-
-  const handlesAdd = async () => {
-    try {
-        // Calculate p9 for each item in dataForSubmit
-        const updatedDataForSubmit = dataForSubmit.map(item => {
-            const det_telat = item.det_telat === 1 ? 1 : 0;
-            const det_id_card = item.det_id_card === 1 ? 1 : 0;
-            const det_nametag = item.det_nametag === 1 ? 1 : 0;
-            const det_rambut = item.det_rambut === 1 ? 1 : 0;
-            const det_sepatu = item.det_sepatu === 1 ? 1 : 0;
-
-            const p9 = (det_telat + det_id_card + det_nametag + det_rambut + det_sepatu) * 2;
-
-            return {
-                ...item,
-                p9
-            };
-        });
-
-        console.log(updatedDataForSubmit); // Check if p9 is correctly calculated
-
-        const response = await fetch(API_LINK + "TransaksiP5m/EditP5m", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(updatedDataForSubmit) // Send updatedDataForSubmit to API
-        });
-
-        if (response.ok) {
-            SweetAlert("Sukses", "Data P5M berhasil disimpan", "success");
-        } else {
-            const errorData = await response.json();
-            SweetAlert("Error", "Terjadi kesalahan saat menyimpan data P5M: " + errorData.message, "error");
-        }
-    } catch (error) {
-        console.error("Error editing P5M data:", error);
-        SweetAlert("Error", "Terjadi kesalahan saat menyimpan data P5M", "error");
-    }
-  };
-
-  const handlesAddOld = async () => {
-  try {
-    for (let [nim, data] of Object.entries(studentData)) {
-      console.log(data);
-      console.log(selectedClass);
-
-      // Check if the student already has a P5M record
-      const existingRecordResponse = await fetch(API_LINK + "TransaksiP5m/CheckP5mExists", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          mhs_id: data.mhs_id,
-          p5m_kelas: selectedClass,
-          p5m_tanggal: currentFilter.startDate,
-        }),
-      });
-      const existingRecord = await existingRecordResponse.json();
-
-      let response;
-      if (existingRecord.exists) {
-        // Update existing record
-        response = await fetch(API_LINK + "TransaksiP5m/UpdateP5m", {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            p5m_id: existingRecord.p5m_id,
-            det_telat: data.det_telat,
-            det_id_card: data.det_id_card,
-            det_nametag: data.det_nametag,
-            det_rambut: data.det_rambut,
-            det_sepatu: data.det_sepatu,
-            totalJamMinus: data.total_jam_minus,
-            det_modif_by: 1, // Update with the actual user ID or identifier
-            det_modif_date: new Date().toISOString(),
-          }),
-        });
-      } else {
-        // Create new record
-        response = await fetch(API_LINK + "TransaksiP5m/CreateP5m", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            p1: selectedClass,
-            p2: 1,
-            mhs_id: data.mhs_id,
-            det_telat: data.det_telat,
-            det_id_card: data.det_id_card,
-            det_nametag: data.det_nametag,
-            det_rambut: data.det_rambut,
-            det_sepatu: data.det_sepatu,
-            totalJamMinus: data.total_jam_minus,
-            p13: 1,
-          }),
-        });
-      }
-
-      const result = await response.json();
-
-      if (result.hasil === "ERROR") {
-        throw new Error("Error creating or updating P5M data for mhs_id: " + data.mhs_id);
-      }
-    }
-
-    SweetAlert("Sukses", "Data P5M berhasil diubah", "success");
-  } catch (error) {
-    console.error("Error creating or updating P5M data:", error);
-    SweetAlert("Error", "Terjadi kesalahan saat menyimpan data P5M", "error");
-  }
-};
 
   const handleExportToExcel = () => {
     const formattedDate = new Date().toLocaleDateString('en-US', {
@@ -516,7 +327,6 @@ export default function TrDetailP5mIndex({ onChangePage }) {
 
     // Write the workbook to a file
     XLSX.writeFile(workbook, `Student_Data_${selectedClass}.xlsx`);
-
   };
 
   const handleInputChange = (event) => {
@@ -572,7 +382,7 @@ export default function TrDetailP5mIndex({ onChangePage }) {
             <Button
               iconName="print"
               classType="success mt-3"
-              label="Cetak Excel"
+              label="Eksport Excel"
               onClick={handleExportToExcel}
             />
           </div>
@@ -586,6 +396,7 @@ export default function TrDetailP5mIndex({ onChangePage }) {
                 max={today}
               />
             </div>
+            
             <Button
               iconName="search"
               classType="primary mt-3"
@@ -611,12 +422,6 @@ export default function TrDetailP5mIndex({ onChangePage }) {
                 totalData={currentData.length} // Menggunakan length dari currentData
                 navigation={handleSetCurrentPage}
               />
-              <Button
-                  iconName="save"
-                  classType="success mt-3"
-                  label="Ubah"
-                  onClick={handlesAdd}
-                />
             </div>
           )}
         </div>
@@ -624,4 +429,3 @@ export default function TrDetailP5mIndex({ onChangePage }) {
     </>
   );
 }
-

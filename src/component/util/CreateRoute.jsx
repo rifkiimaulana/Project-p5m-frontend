@@ -6,6 +6,7 @@ const MasterKelas = lazy(() => import("../page/master-kelas/Root"));
 const TrP5m = lazy(() => import("../page/trP5m/Root"));
 const DetailP5m = lazy(() => import("../page/TrdetailP5m/Root"));
 const CetakP5M = lazy(() => import("../page/CetakP5m/Root"));
+const Login = lazy(() => import("../page/login/Root")); // Importing the Login component
 
 const routeList = [
   {
@@ -22,15 +23,15 @@ const routeList = [
   },
   {
     path: "/trp5m",
-    element: <TrP5m/>,
+    element: <TrP5m />,
   },
   {
     path: "/TrdetailP5m",
-    element: <DetailP5m/>,
+    element: <DetailP5m />,
   },
   {
     path: "/cetakP5m",
-    element: <CetakP5M/>,
+    element: <CetakP5M />,
   },
 ];
 

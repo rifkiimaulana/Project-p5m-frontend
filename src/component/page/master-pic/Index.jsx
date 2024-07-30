@@ -121,7 +121,7 @@ export default function MasterPicIndex({ onChangePage }) {
             ...value,
             Aksi: ["Toggle", "Detail", "Edit"],   //ini juga "Toggle" ganti jadi Delete
             //Aksi: ["Delete", "Detail", "Edit"],   //ini juga "Toggle" ganti jadi Delete
-            Alignment: ["center", "left", "left", "center"],
+            Alignment: ["center", "left", "left", "center","center"],
           }));
           setCurrentData(formattedData);
         }
@@ -139,14 +139,14 @@ export default function MasterPicIndex({ onChangePage }) {
   return (
     <>
       <div className="d-flex flex-column">
-        {isError && (
+        {/* {isError && (
           <div className="flex-fill">
             <Alert
               type="warning"
               message="Terjadi kesalahan: Gagal mengambil data pic."
             />
           </div>
-        )}
+        )} */}
         <div className="flex-fill">
           <div className="input-group">
             <Button

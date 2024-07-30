@@ -48,11 +48,11 @@ export default function MasterKelasDetail({ onChangePage, withID }) {
   
     return (
       <>
-        {isError.error && (
+        {/* {isError.error && (
           <div className="flex-fill">
             <Alert type="danger" message={isError.message} />
           </div>
-        )}
+        )} */}
         <div className="card">
           <div className="card-header bg-primary fw-medium text-white">
             Detail Data Kelas

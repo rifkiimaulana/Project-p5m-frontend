@@ -1,23 +1,22 @@
 import { useEffect, useRef, useState } from "react";
 import { PAGE_SIZE, API_LINK } from "../../util/Constants";
-import SweetAlert from "../../util/SweetAlert";
+import Swal from 'sweetalert2'; // Pastikan SweetAlert diimport dengan benar
 import UseFetch from "../../util/UseFetch";
 import Button from "../../part/Button";
-import Input from "../../part/Input";
+import DropDown from "../../part/Dropdown";
 import Table from "../../part/Table";
 import Paging from "../../part/Paging";
-import Filter from "../../part/Filter";
-import DropDown from "../../part/Dropdown";
-import Alert from "../../part/Alert";
 import Loading from "../../part/Loading";
+import Cookies from "js-cookie";
+import { decryptId } from "../../util/Encryptor";
 
+const cookie = Cookies.get("activeUser");
+const userInfo = JSON.parse(decryptId(cookie));
 const initialData = [];
-
 const dataFilterSort = [
   { Value: "[Kelas] asc", Text: "Kelas Pic [↑]" },
   { Value: "[Kelas] desc", Text: "Kelas Pic [↓]" },
 ];
-
 const dataFilterStatus = [
   { Value: "Aktif", Text: "Aktif" },
   { Value: "Tidak Aktif", Text: "Tidak Aktif" },
@@ -39,14 +38,15 @@ export default function TrP5mIndex({ onChangePage }) {
   const searchFilterSort = useRef("[Kelas] asc");
   const searchFilterStatus = useRef("Aktif");
   const [classList, setClassList] = useState([]);
-  const selectedClass = useRef(""); // useRef to track selected class
+  const selectedClass = useRef("");
   const [studentData, setStudentData] = useState({});
   const [dataForSubmit, setDataForSubmit] = useState([]);
+  //const [selectedClass, setSelectedClass] = useState("");
 
   useEffect(() => {
     const fetchClassList = async () => {
       try {
-        const classData = await UseFetch(API_LINK + "MasterKelas/GetDataKelasCombo");
+        const classData = await UseFetch(API_LINK + "MasterKelas/GetDataKelasCombo", { id: userInfo.nama });
         if (classData && classData !== "ERROR") {
           setClassList(classData);
         }
@@ -93,7 +93,7 @@ export default function TrP5mIndex({ onChangePage }) {
                 onChange={(e) => handleCheckboxChange(value.nim, 'det_id_card', e.target.checked)}
               />
             ),
-            Namtag: (
+            Nametag: (
               <input
                 type="checkbox"
                 onChange={(e) => handleCheckboxChange(value.nim, 'det_nametag', e.target.checked)}
@@ -115,7 +115,6 @@ export default function TrP5mIndex({ onChangePage }) {
           }));
 
           setCurrentData(formattedData);
-          // Initialize studentData state
           const initialStudentData = {};
           formattedData.forEach((item) => {
             initialStudentData[item.nim] = {
@@ -180,6 +179,7 @@ export default function TrP5mIndex({ onChangePage }) {
       }
     });
   };
+  
 
   const handleSetCurrentPage = (newCurrentPage) => {
     setIsLoading(true);
@@ -198,7 +198,7 @@ export default function TrP5mIndex({ onChangePage }) {
         if (response === "ERROR" || !response || response.length === 0) {
           throw new Error("Error or empty response");
         }
-        SweetAlert(
+        Swal.fire(
           "Sukses",
           "Status data Kelas berhasil diubah menjadi " + response[0].Status,
           "success"
@@ -214,39 +214,18 @@ export default function TrP5mIndex({ onChangePage }) {
       });
   };
 
-  const handlesAddOld = async () => {
-    try {
-      for (let data of dataForSubmit) {
-        const response = await fetch(API_LINK + "TransaksiP5m/CreateP5m", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            p1: selectedClass.current,
-            p2: 1, // Gantilah dengan variabel user yang sedang login
-            mhs_id: data.mhs_id,
-            det_telat: data.det_telat,
-            det_id_card: data.det_id_card,
-            det_nametag: data.det_nametag,
-            det_rambut: data.det_rambut,
-            det_sepatu: data.det_sepatu,
-            totalJamMinus: data.total_jam_minus,
-            p13: 1,
-          }),
-        });
+  const handleConfirm = async () => {
+    const confirmResult = await Swal.fire({
+      title: "Yakin simpan data?",
+      text: "Setelah disimpan, data tidak dapat diubah kembali.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Ya, Simpan",
+      cancelButtonText: "Batal",
+    });
 
-        const result = await response.json();
-
-        if (result.hasil === "ERROR") {
-          throw new Error("Error creating P5M data for mhs_id: " + data.mhs_id);
-        }
-      }
-
-      SweetAlert("Sukses", "Data P5M berhasil disimpan", "success");
-    } catch (error) {
-      console.error("Error creating P5M data:", error);
-      SweetAlert("Error", "Terjadi kesalahan saat menyimpan data P5M", "error");
+    if (confirmResult.isConfirmed) {
+      await handlesAdd();
     }
   };
 
@@ -255,110 +234,168 @@ export default function TrP5mIndex({ onChangePage }) {
       const p1 = selectedClass.current;
       const p2 = 1;
       const p13 = 1;
-
-      const dataForSubmitNew = dataForSubmit.map(item => ({
-          p1,
-          p2,
-          mhs_id: item.mhs_id,
-          det_telat: item.det_telat,
-          det_id_card: item.det_id_card,
-          det_nametag: item.det_nametag,
-          det_rambut: item.det_rambut,
-          det_sepatu: item.det_sepatu,
-          p9: eval(item.det_telat+item.det_id_card+item.det_nametag+item.det_rambut+item.det_sepatu)*2,
-          p13
+  
+      // Filter hanya data yang memiliki setidaknya satu checkbox yang dicentang
+      const dataForSubmitNew = dataForSubmit.filter(item =>
+        item.det_telat === 1 || item.det_id_card === 1 || item.det_nametag === 1 ||
+        item.det_rambut === 1 || item.det_sepatu === 1
+      ).map(item => ({
+        p1,
+        p2,
+        mhs_id: item.mhs_id,
+        det_telat: item.det_telat,
+        det_id_card: item.det_id_card,
+        det_nametag: item.det_nametag,
+        det_rambut: item.det_rambut,
+        det_sepatu: item.det_sepatu,
+        p9: eval(item.det_telat + item.det_id_card + item.det_nametag + item.det_rambut + item.det_sepatu) * 2,
+        p13
       }));
-
-        const response = await fetch(API_LINK + "TransaksiP5m/CreateP5m", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(dataForSubmitNew) // Ensure data is a JSON string
-        });
-
-        if (response.ok) {
-            SweetAlert("Sukses", "Data P5M berhasil disimpan", "success");
-        } else {
-            const errorData = await response.json();
-            SweetAlert("Error", "Terjadi kesalahan saat menyimpan data P5M: " + errorData.message, "error");
-        }
+  
+      // Kirim data yang difilter ke API
+      const response = await fetch(API_LINK + "TransaksiP5m/CreateP5m", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(dataForSubmitNew)
+      });
+  
+      if (response.ok) {
+        Swal.fire("Sukses", "Data P5M berhasil disimpan", "success");
+      } else {
+        const errorData = await response.json();
+        Swal.fire("Error", "Terjadi kesalahan saat menyimpan data P5M: " + errorData.message, "error");
+      }
     } catch (error) {
-        console.error("Error creating P5M data:", error);
-        SweetAlert("Error", "Terjadi kesalahan saat menyimpan data P5M", "error");
+      console.error("Error creating P5M data:", error);
+      Swal.fire("Error", "Terjadi kesalahan saat menyimpan data P5M", "error");
     }
   };
 
+  const handleReset = () => {
+    // Reset dataForSubmit
+    setDataForSubmit([]);
+    
+    // Reset currentData
+    const resetData = currentData.map(item => ({
+      ...item,
+      Telat: (
+        <input
+          type="checkbox"
+          checked={false}
+          onChange={(e) => handleCheckboxChange(item.Nama, 'det_telat', e.target.checked)}
+        />
+      ),
+      Idcard: (
+        <input
+          type="checkbox"
+          checked={false}
+          onChange={(e) => handleCheckboxChange(item.Nama, 'det_id_card', e.target.checked)}
+        />
+      ),
+      Nametag: (
+        <input
+          type="checkbox"
+          checked={false}
+          onChange={(e) => handleCheckboxChange(item.Nama, 'det_nametag', e.target.checked)}
+        />
+      ),
+      Rambut: (
+        <input
+          type="checkbox"
+          checked={false}
+          onChange={(e) => handleCheckboxChange(item.Nama, 'det_rambut', e.target.checked)}
+        />
+      ),
+      Sepatu: (
+        <input
+          type="checkbox"
+          checked={false}
+          onChange={(e) => handleCheckboxChange(item.Nama, 'det_sepatu', e.target.checked)}
+        />
+      ),
+      Alignment: ["", "center", "center", "center", "center", "center", "center", "center"],
+    }));
+  
+    setCurrentData(resetData);
+  };
+  
+  
 
   const handleSelectClass = async () => {
+    // Tambahkan setState jika Anda ingin memaksa render ulang komponen setelah update selectedClass
     setCurrentFilter((prevFilter) => ({
       ...prevFilter,
       selectedClass: selectedClass.current,
     }));
   };
-return (
-  <>
-    <div className="d-flex flex-column">
-      {isError && (
+  return (
+    <>
+      <div className="d-flex flex-column">
+      <div>
+          <h5>Total Mahasiswa: {currentData.length}</h5>
+        </div>
+        <div>
+          <h5>Catatan : Data yang diberi tanda centang merupakan mahasiswa yang melakukan pelanggaran</h5>
+        </div>
         <div className="flex-fill">
-          <Alert
-            type="warning"
-            message="Terjadi kesalahan: Gagal mengambil data kelas."
-          />
-        </div>
-      )}
-      <div className="flex-fill">
-        <div className="input-group mt-3 align-items-center">
-          <div className="flex-grow-1 mr-3">
-            <DropDown
-              forInput="ddClasses"
-              label="Pilih Kelas"
-              type="none"
-              arrData={[
-                { Value: "", Text: "Pilih Kelas" },
-                ...classList.map((item) => ({
-                  Value: item.Kelas,
-                  Text: item.Kelas,
-                })),
-              ]}
-              onChange={(e) => {
-                selectedClass.current = e.target.value;
-                handleSelectClass();
-              }}
-              defaultValue=""
-            />
+          <div className="input-group mt-3 align-items-center">
+            <div className="flex-grow-1 mr-3">
+              <DropDown
+                forInput="ddClasses"
+                label="Pilih Kelas"
+                type="none"
+                arrData={[
+                  { Value: "", Text: "Pilih Kelas" },
+                  ...classList.map((item) => ({
+                    Value: item.Kelas,
+                    Text: item.Kelas,
+                  })),
+                ]}
+                onChange={(e) => {
+                  selectedClass.current = e.target.value;
+                  handleSelectClass();
+                }}
+                defaultValue=""
+              />
+            </div>
           </div>
         </div>
+        <div className="mt-3">
+          {isLoading ? (
+            <Loading />
+          ) : (
+            <div className="d-flex flex-column">
+              <Table
+                data={currentData}
+                onToggle={handleSetStatus}
+                onDetail={onChangePage}
+                onEdit={onChangePage}
+              />
+            
+              <Paging
+                pageSize={PAGE_SIZE}
+                pageCurrent={currentFilter.page}
+                totalData={1}
+                navigation={handleSetCurrentPage}
+              />
+              <Button
+                iconName="save"
+                classType="success mt-3"
+                label="Simpan"
+                onClick={handleConfirm}
+              />
+              <Button
+                iconName="save"
+                classType="secondary mt-3"
+                label="Reset"
+                onClick={handleReset}
+              />
+            </div>
+          )}
+        </div>
       </div>
-      <div className="mt-3">
-        {isLoading ? (
-          <Loading />
-        ) : (
-          <div className="d-flex flex-column">
-            <Table
-              data={currentData}
-              onToggle={handleSetStatus}
-              onDetail={onChangePage}
-              onEdit={onChangePage}
-            />
-            <Paging
-              pageSize={PAGE_SIZE}
-              pageCurrent={currentFilter.page}
-              totalData={1}
-              navigation={handleSetCurrentPage}
-            />
-            <Button
-              iconName="save"
-              classType="success mt-3"
-              label="Simpan"
-              onClick={handlesAdd}
-            />
-          </div>
-        )}
-      </div>
-    </div>
-  </>
-);
+    </>
+  );
 }
-
-

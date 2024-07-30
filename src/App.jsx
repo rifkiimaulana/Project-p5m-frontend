@@ -12,16 +12,23 @@ import SideBar from "./component/backbone/SideBar";
 
 import Login from "./component/page/login/Index";
 import Logout from "./component/page/logout/Index";
+import Monitoring from "./component/page/login/Monitoring";
 import NotFound from "./component/page/not-found/Index";
+
+import './App.css'; 
+import Beranda from "./component/page/beranda/Root.jsx";
 
 export default function App() {
   const [listMenu, setListMenu] = useState([]);
   const [listRoute, setListRoute] = useState([]);
+  const isMonitoringPage = window.location.pathname === "/Monitoring";
   const isLoginPage = window.location.pathname === "/login";
   const isLogoutPage = window.location.pathname === "/logout";
   const cookie = Cookies.get("activeUser");
 
-  if (isLoginPage) return <Login />;
+  if (isMonitoringPage) return <Monitoring />;
+ // else if(isLoginPage) return <Login />;
+  if(isLoginPage) return <Login />;
   else if (isLogoutPage) return <Logout />;
   else if (!cookie) window.location.href = "/login";
   else {
@@ -63,11 +70,11 @@ export default function App() {
       <>
         {listRoute.length > 0 && (
           <>
-            <Header displayName={userInfo.nama} roleName={userInfo.peran} />
-            <div style={{ marginTop: "70px" }}></div>
-            <div className="d-flex flex-row">
+            <Header displayName={userInfo.nama} roleName={userInfo.peran}  listMenu={listMenu}/>
+            <div className="main-container">
               <SideBar listMenu={listMenu} />
               <Container>
+                {/* RouterProvider berfungsi sebagai penampung router */}
                 <RouterProvider router={createBrowserRouter(listRoute)} />
               </Container>
             </div>
